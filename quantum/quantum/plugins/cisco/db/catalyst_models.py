@@ -17,11 +17,11 @@
 
 from sqlalchemy import Column, Integer, String
 
-from quantum.plugins.cisco.db.l2network_models import L2NetworkBase
-from quantum.plugins.cisco.db.model_base import BASEV2
+from quantum.plugins.cisco.db.l2network_models_v2 import L2NetworkBaseV2
+from quantum.models_v2.model_base import BASEV2
 
 
-class CatalystPortBinding(BASEV2, L2NetworkBase):
+class CatalystPortBinding(BASEV2, L2NetworkBaseV2):
     """Represents a binding of catalyst port to vlan_id"""
     __tablename__ = 'catalystport_bindings'
 

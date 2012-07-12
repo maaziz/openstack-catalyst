@@ -31,7 +31,7 @@ from quantum.plugins.cisco.common import cisco_exceptions as cexc
 from quantum.plugins.cisco.common import cisco_utils as cutil
 from quantum.plugins.cisco.db import api as db
 from quantum.plugins.cisco.db import l2network_db as cdb
-from quantum.plugins.cisco.db import models_v2
+from quantum.db import models_v2
 
 
 LOG = logging.getLogger(__name__)
@@ -65,11 +65,11 @@ class L2NetworkV2(QuantumDbPluginV2):
         new_net_id = n['id']
         net_name = n['name']
         vlan_id = self._get_vlan_for_tenant(tenant_id, net_name)
-        vlan_name = self._get_vlan_name(new_net_id, str(vlan_id))
+        vlan_name = self._get_vlan_name(str(new_net_id), str(vlan_id))
         self._invoke_device_plugins(self._func_name(), [context,
                                                         n, vlan_name,
                                                         vlan_id])
-        cdb.add_vlan_binding(vlan_id, vlan_name, new_net_id)
+        cdb.add_vlan_binding(vlan_id, vlan_name, str(new_net_id))
         return n
 
     def update_network(self, context, id, network):
@@ -81,26 +81,12 @@ class L2NetworkV2(QuantumDbPluginV2):
 
     def delete_network(self, context, id):
         LOG.debug("L2Network's delete_network() called")
-        """
-        Keep checking db_base_plugin_v2 until ovs plugin not released
-        """
-        with context.session.begin():
-            network = super()._get_network(context, id)
 
-            filter = {'network_id': [id]}
-            ports = super.get_ports(context, filters=filter)
-            if ports:
-                raise q_exc.NetworkInUse(net_id=id)
-
-            subnets_qry = context.session.query(models_v2.Subnet)
-            subnets_qry.filter_by(network_id=id).delete()
-            net_id = network['id']
-            tenant_id = context.tenant_id
-            self._invoke_device_plugins(self._func_name(), [context, id])
-            self._release_vlan_for_tenant(tenant_id, net_id)
-            cdb.remove_vlan_binding(net_id)
-
-            context.session.delete(network)
+        tenant_id = context.tenant_id
+        self._invoke_device_plugins(self._func_name(), [context, id])
+        self._release_vlan_for_tenant(tenant_id, id)
+        cdb.remove_vlan_binding(id)
+        super().delete_network(context, id)
 
     def get_network(self, context, id, fields=None, verbose=None):
         LOG.debug("L2Network's get_network() called")
@@ -142,13 +128,8 @@ class L2NetworkV2(QuantumDbPluginV2):
         """
         Methods for vlan and subnet release yet to be added.
         """
-        with context.session.begin():
-            subnet = super()._get_subnet(context, id)
-
-            allocations_qry = context.session.query(models_v2.IPAllocation)
-            allocations_qry.filter_by(subnet_id=id).delete()
-            self._invoke_device_plugins(self._func_name(), [context, id])
-            context.session.delete(subnet)
+        self._invoke_device_plugins(self._func_name(), [context, id])
+        super().delete_subnet(context, id)
 
     def get_subnet(self, context, id, fields=None, verbose=None):
         LOG.debug("L2Network's get_subnet() called")
@@ -187,13 +168,8 @@ class L2NetworkV2(QuantumDbPluginV2):
 
     def delete_port(self, context, id):
         LOG.debug("L2Network's delete_port() called")
-        with context.session.begin():
-            port = super()._get_port(context, id)
-
-            allocations_qry = context.session.query(models_v2.IPAllocation)
-            allocations_qry.filter_by(port_id=id).delete()
-            self._invoke_device_plugins(self._func_name(), [context, id])
-            context.session.delete(port)
+        self._invoke_device_plugin(self._func_name(), [context, id])
+        super().delete_port(context, id)
 
     def get_port(self, context, id, fields=None, verbose=None):
         LOG.debug("L2Network's get_port() called")
