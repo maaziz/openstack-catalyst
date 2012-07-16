@@ -1,144 +1,125 @@
-# This code is not complete.
-# Additional fetures supported by cat6k but not by nexus might need to be
-# added.
-# catayst_first/second_interface may or may not have to be bargained for
-# Inclusion of the above interfaces will change the second and third last
-# definitions
-# because these interfaces as assigned as trunk interfaces to a network/vlan
-# when created and removed when deleted
-# Created by Chinmay with reference to the pre existing
-# cisco_nexus_netwok_driver
 """
-CISCO CATALYST SWITCH DRIVER
+Cisco Catalyst Driver
+Sends config info to the switch through TCP packets
 """
-
 import logging
+from socket import socket, AF_INET, SOCK_STREAM
 
-from ncclient import manager
+from quantum.plugis.cisco.catalyst import cisco_catalyst_configuration as conf
+from quantum.openstack.common import importutils
+from quantum.plugins.cisco.db import l2network_db as cdb
 
-from quantum.plugins.cisco.db import l2network_db_v2 as cdb
-from quantum.plugins.cisco.catalyst import cisco_catalyst_snippets as snipp
 
-LOG = logging.getLogger(__none__)
+LOG = logging.getLogger(__name__)
 
 
 class CiscoCATALYSTDriver():
     """
-    CATALYST Driver Main Class
+    Catalyst Driver main class
     """
     def __init__(self):
-        pass
+        """
+        Extract ip and port from config file
+        """
+        LOG.debug("Extracting device ip and port\n")
+        self._catalyst_ip = conf.CATALYST_IP_ADDRESS
+        self._catalyst_port = conf.CATALYST_PORT
+        LOG.debug("Device ip and port obtained\n")
 
-    def catalyst_connect(self, catalyst_host, catalyst_ssh_port,
-                         catalyst_user, catalyst_password):
+    def sendpacket(self, payload):
         """
-        Makes the SSH connection to the Catalyst Switch
+        Sends a TCP packet to the extracted ip and port
         """
-        man = manager.connect(host=catalyst_host, port=catalyst_ssh_port,
-                              username=catalyst_user,
-                              password=catalyst_password)
-        return man
+        LOG.debug("Sending packet to device\n")
+        IP = self._catalyst_ip
+        PORT = self._catalyst_port
+        s = socket(AF_INET, SOCK_STREAM)
+        s.connect((IP,PORT))
+        s.send(payload)
+        LOG.debug("Config data sent to the device\n")
+        data = client.recv(1024)
+        LOG.debug("Recieved reply - %s\n" % data)
+        s.close()
 
-    def create_snippet(self, customized_config):
+    def create_vlan(self, vlan_name, vlan_id):
         """
-        Creates the Proper Snippet structure for the
-        Catalyst Switch Configuration
+        Creates a vlan on the device
         """
-        conf_snippet = snipp.EXEC_CONF_SNIPPET % (customized_config)
-        return conf_snippet
+        LOG.debug("Create vlan(DRIVER) called\n")
+        self.enable_vlan(vlan_name, vlan_id)
+        # here, we just print all the used vlan ids on the LOG 
+        vlan_ids = self.build_vlans_cmd()
+        LOG.debug("CatalystDriver VLAN IDs: %s" %vlan_ids)
 
-    def enable_vlan(self, mgr, vlanid, vlanname):
+    def delete_vlan(self, vlan_id):
         """
-        Creates a VLAN on the Catalyst Switch given the VLAN ID and Name
+        Removes a vlan from the device
         """
-        confstr = snipp.CMD_VLAN_CONF_SNIPPET % (vlanid, vlanname)
-        confstr = self.create_snippet(self, confstr)
-        mgr.edit_config(target='running', config=confstr)
+        LOG.debug("delete vlan(DRIVER) called\n")
+        self.disable_vlan(vlan_id)
 
-    def disable_vlan(self, mgr, vlanid):
+    def enable_vlan(self, vlan_name, vlan_id):
         """
-        Delete a VLAN on the CATALYST Switch given the VLAN ID
+        Enables a vlan on the switch by creating the necessary
+        config packet and calling sendpacket
         """
-        confstr = snipp.CMD_NO_VLAN_CONF_SNIPPET % vlanid
-        confstr = self.create_snippet(self, confstr)
-        mgr.egit_config(target='running', config=confstr)
+        LOG.debug("Obtaining config packet\n")
+        # payload = Corres method defined in snippets
+        LOG.debug("Calling sendpacket\n")
+        self.sendpacket(payload)
 
-    #def enable_subnet():
-
-    #def disable_subnet():
-
-    def enable_port_trunk(self, mgr, interface):
+    def disable_vlan(self, vlan_id):
         """
-        Enables a trunk interface on a CATALYST switch
+        Disables a vlan on the switch by creating the required
+        config packet and calling sendpacket
         """
-        confstr = snipp.CMD_PORT_TRUNK % interface
-        confstr = self.create_snippets(self, confstr)
-        LOG.debug("CatalystDriver: %s" % confstr)
-        mgr.edit_config(target='running', config=confstr)
-
-    def disable_switch_port(self, mgr, interface):
-        """
-        Disables a trunk interface on a CATALYST SWICH
-        """
-        confstr = snipp.CMD_NO_SWITCHPORT % interface
-        confstr = self.create_snippets(self, confstr)
-        LOG.debug("CatalystDriver: %s" % confstr)
-        mgr.edit_config(target='running', config=confstr)
-
-    def enable_vlan_on_trunk_init(self, mgr, interface, vlanid):
-        """
-        Enables Trunk mode VLAN access on a CATALYST Switch Interface
-        given the VLAN ID
-        """
-        confstr = snipp.CMD_VLAN_INT_SNIPPEt % (interface, vlanid)
-        confstr = self.create_snippet(self, confstr)
-        LOG.debug("CataystDriver: %s" % confstr)
-        mgr.edit_config(target='return', config=confstr)
-
-    def disable_vlan_on_trunk_init(self, mgr, interface, vlanid):
-        """
-        Disbales Trunk mode VLAN access on a CATALYST Switch interface
-        given VLAN ID
-        """
-        confstr = snipp.CMD_NO_VLAN_INT_SNIPPET % (interface, vlanid)
-        confstr = self.create_snippet(self, confstr)
-        LOG.debug("Catalyst Driver : %s" % confstr)
-        mgr.edit_config(target='return', config=confstr)
-
-    def create_vlan(self, vlan_name, vlan_id, catalyst_host,
-                    catalyst_password, catalyst_ssh_port):
-        """
-        Creates a VLAN on a CATALYST Switch given the VLANID and VLANNAME
-        """
-        with self.cataylst_connect(self, catalyst_host, catalyst_user,
-                                   catalyst_password,
-                                   catalyst_ssh_port) as man:
-            self.enable_vlan(man, vlan_id, vlan_name)
-            vlan_ids = self.build_vlans_cmd()
-            LOG.debug("Catalyst Driver VLAN IDs: %s" % vlan_ids)
-
-    def delete_vlan(self, vlan_name, vlan_id, catalyst_host,
-                    catalyst_password, catalyst_ssh_port):
-        """
-        Deletes a VLAN on a CATALYST Switch given the VLANID and VLANNAME
-        """
-        with self.catayst_connect(self, catalyst_host, catalyst_user,
-                                  catalyst_pasword,
-                                  catalyst_ssh_port) as man:
-            self.disable_vlan(man, vlan_id)
+        LOG.debug("Obtaining config packet\n")
+        # payload = Corres method defined in snippets
+        LOG.debug("Calling sendpacket\n")
+        self.sendpacket(payload)
 
     def build_vlans_cmd(self):
-        """"
-        Builds a string with all the VLANS on the same SWITCH
+        """
+        Builds a string with all the vlans on the Switch
         """
         assigned_vlan = cdb.get_all_vlanids_used()
         vlans = ''
         for vlanid in assigned_vlan:
-            vlans = str(vlanid["vlan_id"]) + ',' + vlans
-        if vlans == '':
+            vlans = str(vlanid['vlan_id']) + ',' + vlans
+        if vlans = '':
             vlans = 'none'
         return vlans.strip(',')
 
-    #def create_subnet():
+    def create_subnet(self, subnet):
+        """
+        Adds a subnet to the given switch
+        """
+        LOG.debug("Create subnet(DRIVER) called\n")
+        self.enable_subnet(subnet)
 
-    #def delete_subnet():
+    def delete_subnet(self, sub_id):
+        """
+        Removes a subnet from the given device
+        """
+        LOG.debug("Remove subnet called\n")
+        self.disable_subnet(sub_id)
+
+    def enable_subnet(self, subnet):
+        """
+        Called by create_subnet and does so by creating a packet and
+        invoking sendpacket
+        """
+        LOG.debug("Obtaining config packet\n")
+        # payload = Corres method in snippets
+        LOG.debug("Calling sendpacket\n")
+        self.sendpacket(payload)
+
+    def disable_subnet(self, sub_id):
+        """
+        Disables a subnet on the switch by creating a corresponding
+        config packet and invoking sendpacket
+        """
+        LOG.debug("Obtaining config packet\n")
+        # payload = corres method in snippets
+        LOG.debug("Calling sendpacket\n")
+        self.sendpacket(payload)

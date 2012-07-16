@@ -11,16 +11,17 @@ LOG = logging.getLogger('quantum.tests.test_core_api_func')
 class CoreAPITESTFuncV2(unittest.TestCase):
 
     def setUp(object):
-        self.network_name = 'test_cisco_network!'
+        self.network_name = 'test_cisco_network1'
         context.tenant_id = 'test_cisco_tenant1'
         self.admin_status_up = 'UP'
         self._l2network_plugin = l2network_plugin_v2.L2NetworkPluginV2
+        self.new_net_name = 'new_cisco_network'
 
     def tearDownNetwork(context, net):
         """
         Tears down an existing network
         """
-        self._l2network_plugin_v2(context, net['id'])
+        self._l2network_plugin.delete_network(context, net['id'])
 
     def test_create_network(self):
         """
@@ -99,3 +100,60 @@ class CoreAPITESTFuncV2(unittest.TestCase):
         """
 
         LOG.debug("test_update_network - START")
+        network = {'name': self.network_name,
+                   'admin_state_up': self.admin_status_up}
+        new_net_dict = self._l2network_plugin.create_network(context,
+                                                             network)
+        net_new = {'name': self.new_net_name}
+        update_dict = self._l2network_plugin.update_network(context,
+                                                            new_net_dict['id'],
+                                                            net_new)
+        net = self._l2network_plugin._get_network(context, new_net_dict['id'])
+        self.assertEqual(net['name'], self.new_net_name)
+        self.assertEqual(net['name'], update_dict['name'])
+        self.tearDownNetwork(context, new_net_dict)
+        LOG.debug("test_update_network - END")
+
+    def test_update_network_DNE(self):
+        """
+        Test update of a non existant network
+        """
+  
+        LOG.debug('test_update_network_DNE - START')
+        network = {'name': self.network_name,
+                   'admin_state_up': self.admin_status_up)
+        net_new = {'name': self.new_net_name}
+        self.assertRaises(exc.NetworkNotFound,
+                          self._l2_network_plugin.update_network,
+                          context, network['id'], net_new)
+        LOG.debug('test_update_network_DNE - END')
+
+    def test_get_networks(self):
+        """
+        Tests display of all networks
+        """
+
+        LOG.debug('test_get_networks - START')
+        net1 = {'name': self.network_name,
+                'admin_state_up': self.admin_state_up)
+        net2 = {'name': self.new_net_name,
+                'admin_state_up': self.admin_state_up)
+        net_dict1 = _l2network_plugin.create_network(context, net1)
+        net_dict2 = _l2network_plugin.create_network(context, net2)
+        #needs to be completed
+
+    def create_subnet(self):
+
+    def delete_subnet(self):
+  
+    def delete_subnet_DNE(self): 
+
+    def update_subnet(self):
+
+    def update_subnet_DNE(self):
+ 
+    def get_subnet(self):
+
+    def get_subnet_DNE(self):
+
+    def get_subnets(self):
