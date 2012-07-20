@@ -138,11 +138,36 @@ class CoreAPITESTFuncV2(unittest.TestCase):
                 'admin_state_up': self.admin_state_up)
         net2 = {'name': self.new_net_name,
                 'admin_state_up': self.admin_state_up)
-        net_dict1 = _l2network_plugin.create_network(context, net1)
-        net_dict2 = _l2network_plugin.create_network(context, net2)
+        net_dict1 = self._l2network_plugin.create_network(context, net1)
+        net_dict2 = self._l2network_plugin.create_network(context, net2)
         #needs to be completed
 
     def create_subnet(self):
+        """
+        Tests the create subnet api
+        """
+        LOG.debug('test_create_subnet - START')
+        net = {'name': self.network_name,
+               'admin_state_up': self.admin_state_up}
+        new_net_dict = self._l2network_plugin.create_network(context, net)
+        subnet = {'network_id': new_net_dict['id'],
+                  'ip_version': self.ip_version,
+                  'cidr': self.cidr,
+                  'gateway_ip': self.gateway_ip}
+        sub_created = self._l2network_plugin.create_subnet(
+                            context, subnet)
+        sub_verify = self._l2network_plugin.get_subnet(
+                            context, sub_created['id'])
+        self.assertEqual(sub_created['id'], sub_verify['id'])
+        self.assertEqual(sub_created['network_id'],
+                         sub_verify['network_id'])
+        self.assertEqual(sub_created['gateway_ip'],
+                         sub_verify['gateway_ip'])
+        self.assertEqual(sub_created['cidr'],
+                         sub_verify['cidr'])
+        self.tearDownSubnet(context, sub_created['id'])
+        self.tearDownNetwork(context, new_net_dict['id'])
+        LOG.debug('test_create_subnet - END')
 
     def delete_subnet(self):
   

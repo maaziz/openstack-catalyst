@@ -71,10 +71,17 @@ class CatalystPlugin(L2DevicePluginBaseV2):
 
     def update_subnet(self, context, id, subnet):
         """
-        Mostly don't need to do anything here as it is already carried out
-        by the l2network plugin(v2)
+        Updates the subnet given by id with details given in subnet
         """
-        pass
+        sub_existing = qdb._get_subnet(context, id)
+        if subnet['ip_version']:
+            sub_existing['ip_version'] = subnet['ip_version']
+        if subnet['cidr']:
+            sub_existing['cidr'] = subnet['cidr']
+        if subnet['gateway_ip']:
+            sub_existing['gateway_ip'] = subnet['gateway_ip']
+        # Allocation pool update needs to be added
+        return sub_existing
 
     def get_subnet(self, context, id, fields=None, verbose=None):
         """
@@ -118,13 +125,13 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         self._networks[network['id']] = new_net_dict
         return new_net_dict
 
-    def delete_network(self, context, id):
+    def delete_network(self, tenant_id, id):
         """
         Deletes a VLAN in the switch, and removes the VLAN configuration
         from the relevant interfaces
         """
         LOG.debug("CatalystPlugin:delete_network() called\n")
-        vlan_id = self._get_vlan_id_for_network(context.tenant_id, id)
+        vlan_id = self._get_vlan_id_for_network(tenant_id, id)
         ports_id = ctst_db.get_catalystport_binding(vlan_id)
         LOG.debug("CatalystPlugin:Interfaces to be disassociated: %s"
                   % ports_id)
