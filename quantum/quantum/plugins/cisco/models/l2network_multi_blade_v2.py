@@ -139,7 +139,7 @@ class NetworkMultiBladeV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
                                                           self._func_name(),
                                                           args)
             catalyst_output = self._invoke_plugin_per_device(
-                                const.CISCO_PLUGIN, self._func_name(), arg)
+                                const.CATALYST_PLUGIN, self._func_name(), arg)
 
             output.extend(ucs_output or [])
             output.extend(nexus_output or [])

@@ -13,7 +13,7 @@ class CoreAPITESTFuncV2(unittest.TestCase):
     def setUp(object):
         self.network_name = 'test_cisco_network1'
         context.tenant_id = 'test_cisco_tenant1'
-        self.admin_status_up = 'UP'
+        self.admin_status_up = 'ACTIVE'
         self._l2network_plugin = l2network_plugin_v2.L2NetworkPluginV2
         self.new_net_name = 'new_cisco_network'
 

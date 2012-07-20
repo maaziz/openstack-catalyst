@@ -27,7 +27,7 @@ class TestCatalystPlugin(unittest.TestCase):
         self.network_name = "test_network_cisco1"
         self.network_name2 = "test_network_cisco2"
         context.tenant_id = "test_tenant_cisco1"
-        self.admin_state_up = "UP"
+        self.admin_state_up = "ACTIVE"
         self._cisco_catalyst_plugin = cisco_catalyst_plugin.CatalystPlugin
         self.vlan_id = 257
         self.vlan_id2 = 258
