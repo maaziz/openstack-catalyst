@@ -42,6 +42,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
     """
     _networks = {}
     _subnets = {}
+    _port = 80
 
     def __init__(self):
         """
@@ -66,7 +67,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
                                                 for pool in
                                                 subnet['allocation_pools']}],
                         'gateway_ip': subnet['gateway_ip']}
-        self._subnets[subnet['id']] = new_sub_dict  
+        self._subnets[subnet['id']] = new_sub_dict
         return new_sub_dict
 
     def update_subnet(self, context, id, subnet):
@@ -83,7 +84,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         subnet = qdb._get_subnet(context, id)
         vlan = cdb.get_vlan_binding(subnet['network_id'])
         subnet['vlan_id'] = vlan
-        return subnet 
+        return subnet
 
     def delete_subnet(self, context, id):
         """
@@ -106,8 +107,9 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         Create a VLAN in the switch, and configure the appropriate interfaces
         for this VLAN
         """
-        LOG.debug("CatalystPlugin:create_network() called\n")
+        LOG.debug("CatalystPlugin:create_network() acalled\n")
         self._client.create_vlan(vlan_name, str(vlan_id))
+        ctst_db.add_catalystport_binding(self._port, str(vlan_id))
         new_net_dict = {const.ID: network['id'],
                         const.NAME: network['name'],
                         const.TENANT_ID: network['tenant_id'],
@@ -129,6 +131,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         LOG.debug("CatalystPlugin:Interfaces to be disassociated: %s"
                   % ports_id)
         ctst_db.remove_catalystport_binding(vlan_id)
+        # (harspras) Add exception for Network not found
         net = qdb._get_network(context, id)
         self._client.delete_vlan(str(vlan_id))
         return net
@@ -137,6 +140,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         """
         might be a change in last two statements
         """
+        # (harspras) Just return from _networks dict
         network =  qdb._get_network(context, id)
         vlan = cdb.get_vlan_binding(id)
         return {const.ID: id, const.NAME: network.name,
@@ -158,6 +162,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         """
         LOG.debug("CatalystPlugin:update_network() called\n")
         network = qdb._get_network(context, id)
+        # (harspras) what is n??
         network.update(n)
         return qdb._make_network_dict(network)
 
@@ -188,7 +193,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         Delete if not required.
         """
         LOG.debug("CiscoPlugin:get_port() called\n")
-        
+
 
     def get_ports(self, context, filters=None, fields=None, verbose=None):
         """
