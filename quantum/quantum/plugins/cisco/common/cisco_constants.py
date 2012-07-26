@@ -115,6 +115,7 @@ RHEL_DEVICE_NAME_REPFIX = "eth"
 
 UCS_PLUGIN = 'ucs_plugin'
 NEXUS_PLUGIN = 'nexus_plugin'
+CATALYST_PLUGIN = 'catalyst_plugin'
 UCS_INVENTORY = 'ucs_inventory'
 NEXUS_INVENTORY = 'nexus_inventory'
 
