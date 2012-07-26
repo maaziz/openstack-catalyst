@@ -7,6 +7,7 @@ SECTION = CP['SWITCH']
 
 CATALYST_IP_ADDRESS = CP['catalyst_ip_address']
 CATALYST_PORT = CP['catayst_port']
+SOCKET_PORT = CP['socket_port']
 
 SECTION = CP['DRIVER']
 CATALYST_DRIVER = CP['name']

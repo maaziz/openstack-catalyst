@@ -130,7 +130,7 @@ class NetworkMultiBladeV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
                                                              n['name'])
             vlan_name = self._vlan_mgr.get_vlan_name(n['id'], str(vlan_id))
             args = [n['tenant_id'], n['name'], n['id'], vlan_name, vlan_id]
-            arg = [context, n]
+            arg = [context, n, vlan_name, vlan_id]
             output = []
             ucs_output = self._invoke_plugin_per_device(const.UCS_PLUGIN,
                                                         self._func_name(),
@@ -162,7 +162,7 @@ class NetworkMultiBladeV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
         """Currently there is no processing required for the device plugins"""
         pass
 
-    def delete_network(self, context, id, kwargs, tenant_id):
+    def delete_network(self, context, id, tenant_id, kwargs):
         """
         Perform this operation in the context of the configured device
         plugins.
@@ -243,23 +243,80 @@ class NetworkMultiBladeV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
             raise
 
     def create_subnet(self, context, subnet):
-        """Currently there is no processing required for the device plugins"""
-        pass
+        """
+        Perform this operation in the context of the configured device
+        plugins
+        """
+        try:
+            args = [context, subnet]
+            output = []
+            cataylst_output = self._invoke_plugin_per_device(
+                                const.CATALYST_PLUGIN, self._func_name(), 
+                                args)
+            output.extend(catalyst_output or [])
+        except:
+            raise
 
     def update_subnet(self, context, id, subnet):
-        """Currently there is no processing required for the device plugins"""
+        """
+        Perform this operation in the context of the configured device
+        plugins
+        """
+       # try:
+           # args = [context, id]
+           # output = []
+           # catalyst_output = self._invoke_plugin_per_device(
+           #                     const.CATALYST_PLUGIN, self._func_name(),
+           #                     args)
+           # output.extend(catalyst_output or [])
+        #except:
+            #raise
         pass
-
     def get_subnet(self, context, id, fields=None, verbose=None):
-        """Currently there is no processing required for the device plugins"""
+        """
+        Perform this operation in the context of the configured device
+        plugins
+        """
+        #try:
+            #args = [context, id]
+            #output = []
+            #catalyst_output = self._invoke_plugin_per_device(
+            #                    const.CATALYST_PLUGIN, self._func_name(),
+            #                    args)
+            #output.extend(catalyst_output or [])
+        #except:
+            #raise
         pass
 
     def delete_subnet(self, context, id, kwargs):
-        """Currently there is no processing required for the device plugins"""
-        pass
+        """
+        Perform this operation in the context of the configured device 
+        plugins
+        """
+        try:
+            args = [context, id]
+            output = []
+            catalyst_output = self._invoke_plugin_per_device(
+                                const.CATALYST_PLUGIN, self._func_name(),
+                                args)
+            output.extend(catalyst_output or [])
+        except:
+            raise
 
     def get_subnets(self, context, filters=None, fields=None, verbose=None):
-        """Currently there is no processing required for the device plugins"""
+        """
+        Perform this operaion in the context of the configured device
+        plugins
+        """
+        #try:
+            #args = [context]
+            #output = []
+            #catalyst_output = self._invoke_plugin_per_device(
+            #                    const.CATALYST_PLUGIN, self._func_name(),
+            #                    args)
+           #output.extend(catalyst_output or [])
+        #except:
+            #raise
         pass
 
     """
