@@ -30,7 +30,7 @@ class CiscoCATALYSTDriver():
         Create a sub interface with an ip on the give vlan
         on the switch
         """
-        with self.ssh_connect(catalyst_host, int(catalyst_ssh_port)
+        with self.ssh_connect(catalyst_host, int(catalyst_ssh_port),
                               catalyst_user, catalyst_password) as m:
             confstr = snipp.SUBINTERFACE_CREATE
             m.edit_config(target='running', config=confstr)

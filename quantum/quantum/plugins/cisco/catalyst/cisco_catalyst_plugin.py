@@ -22,11 +22,8 @@ PlugIn for Cisco OS driver
 """
 import logging
 
-from quantum.common import exceptions as exc
 from quantum.openstack.common import importutils
 from quantum.plugins.cisco.common import cisco_constants as const
-from quantum.plugins.cisco.common import cisco_credentials as cred
-from quantum.plugins.cisco.db import api as db
 from quantum.plugins.cisco.db import l2network_db as cdb
 from quantum.plugins.cisco.db import catalyst_db as ctst_db
 from quantum.plugins.cisco.l2device_plugin_baseV2 import L2DevicePluginBaseV2
@@ -63,9 +60,9 @@ class CatalystPlugin(L2DevicePluginBaseV2):
                         'ip_version': subnet['ip_version'],
                         'cidr': subnet['cidr'],
                         'allocation_pools;': [{'start': pool['first_ip'],
-                                               'end': pool['last_ip'],
+                                               'end': pool['last_ip']}
                                                 for pool in
-                                                subnet['allocation_pools']}],
+                                                subnet['allocation_pools']],
                         'gateway_ip': subnet['gateway_ip']}
         self._subnets[subnet['id']] = new_sub_dict
         return new_sub_dict
@@ -121,13 +118,14 @@ class CatalystPlugin(L2DevicePluginBaseV2):
                         const.NAME: network['name'],
                         const.TENANT_ID: network['tenant_id'],
                         const.ADMIN_STATE_UP: network['admin_state_up'],
-                        const.STATUS: network['status']
+                        const.STATUS: network['status'],
                         const.SUBNETS: [subnet['id']
-                           for subnet in network['subnets']]}
+                                        for subnet in network['subnets']]}
+
         self._networks[network['id']] = new_net_dict
         return new_net_dict
 
-    def delete_network(self, tenant_id, id):
+    def delete_network(self, context, tenant_id, id):
         """
         Deletes a VLAN in the switch, and removes the VLAN configuration
         from the relevant interfaces
@@ -148,7 +146,7 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         might be a change in last two statements
         """
         # (harspras) Just return from _networks dict
-        network =  qdb._get_network(context, id)
+        network = qdb._get_network(context, id)
         vlan = cdb.get_vlan_binding(id)
         return {const.ID: id, const.NAME: network.name,
                 const.NET_PORTS: network.ports,
@@ -167,10 +165,11 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         Updates the properties of a particular
         Virtual Network.
         """
+        n = network['network']
         LOG.debug("CatalystPlugin:update_network() called\n")
-        network = qdb._get_network(context, id)
-        # (harspras) what is n??
-        network.update(n)
+        with context.session.begin():
+            network = qdb._get_network(context, id)
+            network.update(n)
         return qdb._make_network_dict(network)
 
     def create_port(self, context, port):
@@ -200,7 +199,6 @@ class CatalystPlugin(L2DevicePluginBaseV2):
         Delete if not required.
         """
         LOG.debug("CiscoPlugin:get_port() called\n")
-
 
     def get_ports(self, context, filters=None, fields=None, verbose=None):
         """

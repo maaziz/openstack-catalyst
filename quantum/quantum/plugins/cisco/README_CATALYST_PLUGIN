@@ -1,0 +1,6 @@
+The catalyst plugin is in compatible to cisco's v2 blueprint
+https://review.openstack.org/#/c/9988/ for nexus and ucs plugin. For it to work
+, the l2network v2 files of the blueprint should be used. Other v2 files are
+the ones we created for v2 as cisco's v2 version was not available at that
+time. The l2network_plugin_v2.py would now be network_plugin.py and similarily
+for other files. Please refer the blueprint at the above url.
